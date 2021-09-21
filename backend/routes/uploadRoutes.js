@@ -2,7 +2,11 @@ import path from "path";
 import express from "express";
 import multer from "multer";
 import s3Storage from "multer-sharp-s3";
+import dotenv from "dotenv";
 import aws from "aws-sdk";
+
+dotenv.config();
+
 const router = express.Router();
 
 // 如果是存在Server的硬碟裡面的話
