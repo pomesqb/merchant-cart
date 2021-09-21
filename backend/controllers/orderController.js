@@ -1,5 +1,6 @@
 import asyncHandler from "express-async-handler";
 import Order from "../models/orderModel.js";
+import axios from "axios";
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -58,15 +59,60 @@ const getOrderById = asyncHandler(async (req, res) => {
 const updateOrderToPaid = asyncHandler(async (req, res) => {
   const order = await Order.findById(req.params.id);
 
+  let prime;
+
+  let paymentUrl;
+  if (process.env.NODE_ENV === "development") {
+    paymentUrl = "https://sandbox.tappaysdk.com/tpc/payment/pay-by-prime";
+    prime = "test_3a2fb2b7e892b914a03c95dd4dd5dc7970c908df67a49527c0a648b2bc9";
+  } else {
+    paymentUrl = "https://prod.tappaysdk.com/tpc/payment/pay-by-prime";
+    primr = req.body.prime;
+  }
+
+  let payData = {
+    prime: prime,
+    partner_key: process.env.TAPPAY_PARTNER_KEY,
+    merchant_id: process.env.TAPPAY_MERCHANT_ID,
+    details: "TapPay Test",
+    amount: order.totalPrice,
+    cardholder: {
+      phone_number: order.shippingAddress.mobilePhone,
+      name: req.user.name,
+      email: req.user.email,
+      zip_code: "",
+      address: "",
+      national_id: "",
+    },
+    remember: true,
+  };
+
+  let result = await axios.post(paymentUrl, payData, {
+    headers: {
+      "x-api-key": process.env.TAPPAY_PARTNER_KEY,
+    },
+  });
+
+  let paymentResult = result.data;
+
+  // 更新訂單狀態
   if (order) {
-    order.isPaid = true;
-    order.paidAt = Date.now();
+    let update_time = 0;
+    if (paymentResult.transaction_time_millis != null) {
+      update_time = paymentResult.transaction_time_millis;
+    }
+
     order.paymentResult = {
       id: req.body.id,
-      status: req.body.status,
-      update_time: req.body.update_time,
-      email_address: req.body.payer.email_address,
+      status: paymentResult.status,
+      returnMsg: paymentResult.msg,
+      update_time,
     };
+
+    if (paymentResult.status === 0) {
+      order.isPaid = true;
+      order.paidAt = Date.now();
+    }
 
     const updatedOrder = await order.save();
 

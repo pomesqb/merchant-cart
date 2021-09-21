@@ -1,5 +1,4 @@
-import axios from "axios";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import {
@@ -13,6 +12,7 @@ import {
   ORDER_DELIVER_RESET,
   ORDER_PAY_RESET,
 } from "../constants/orderConstants";
+import { format } from "date-fns";
 
 const OrderScreen = ({ match, history }) => {
   const orderId = match.params.id;
@@ -29,7 +29,11 @@ const OrderScreen = ({ match, history }) => {
   const { order, loading, error } = orderDetails;
 
   const orderPay = useSelector((state) => state.orderPay);
-  const { loading: loadingPay, success: successPay } = orderPay;
+  const {
+    loading: loadingPay,
+    success: successPay,
+    error: errorPay,
+  } = orderPay;
 
   const orderDeliver = useSelector((state) => state.orderDeliver);
   const { loading: loadingDeliver, success: successDeliver } = orderDeliver;
@@ -192,6 +196,31 @@ const OrderScreen = ({ match, history }) => {
     dispatch(deliverOrder(order));
   };
 
+  const submitPayment = (e) => {
+    e.preventDefault();
+
+    // 取得 TapPay Fields 的 status
+    const tappayStatus = window.TPDirect.card.getTappayFieldsStatus();
+
+    // 確認是否可以getPrime
+    if (tappayStatus.canGetPrime === false) {
+      alert("can not get prime");
+      return;
+    }
+
+    // Get prime
+    window.TPDirect.card.getPrime((result) => {
+      if (result.status !== 0) {
+        alert("get prime error " + result.msg);
+        return;
+      }
+      dispatch(payOrder(orderId, { prime: result.card.prime }));
+
+      // send prime to your server, to pay with Pay by Prime API .
+      // Pay By Prime Docs: https://docs.tappaysdk.com/tutorial/zh/back.html#pay-by-prime-api
+    });
+  };
+
   return loading ? (
     <Loader />
   ) : error ? (
@@ -213,16 +242,19 @@ const OrderScreen = ({ match, history }) => {
               </p>
               <p>
                 <strong>Address:</strong>
-                {order.shippingAddress.address}, {order.shippingAddress.city}{" "}
-                {order.shippingAddress.postalCode},{" "}
-                {order.shippingAddress.country}
+                {order.shippingAddress.address}
+              </p>
+              <p>
+                <strong>mobilePhone:</strong>
+                {order.shippingAddress.mobilePhone}
               </p>
               {order.isDelivered ? (
                 <Message variant="success">
-                  Delivered on {order.deliveredAt}
+                  Delivered on{" "}
+                  {format(new Date(order.deliveredAt), "yyyy/MM/dd HH:mm:ss")}
                 </Message>
               ) : (
-                <Message variant="danger">Not Delivered</Message>
+                <Message variant="dark">Not Delivered</Message>
               )}
             </li>
 
@@ -233,9 +265,12 @@ const OrderScreen = ({ match, history }) => {
                 {order.paymentMethod}
               </p>
               {order.isPaid ? (
-                <Message variant="success">Paid on {order.paidAt}</Message>
+                <Message variant="success">
+                  Paid on{" "}
+                  {format(new Date(order.paidAt), "yyyy/MM/dd HH:mm:ss")}
+                </Message>
               ) : (
-                <Message variant="danger">Not Paid</Message>
+                <Message variant="dark">Not Paid</Message>
               )}
             </li>
 
@@ -313,9 +348,18 @@ const OrderScreen = ({ match, history }) => {
                       id="card-ccv"
                       ref={payCardCcv}
                     ></div>
-                    <button type="button" className="btn btn-primary">
-                      結帳
-                    </button>
+                    {loadingPay ? (
+                      <Loader />
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={submitPayment}
+                      >
+                        結帳
+                      </button>
+                    )}
+                    {errorPay && <Message variant="danger">{errorPay}</Message>}
                   </div>
                 </li>
               )}
@@ -327,7 +371,7 @@ const OrderScreen = ({ match, history }) => {
                   <li className="list-group-item">
                     <button
                       type="button"
-                      className="btn btn-block"
+                      className="btn btn-warning"
                       onClick={deliverHandler}
                     >
                       Mark As Delivered

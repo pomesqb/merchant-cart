@@ -8,17 +8,15 @@ const ShippingScreen = ({ history }) => {
   const { shippingAddress } = cart;
 
   const [address, setAddress] = useState(shippingAddress.address || "");
-  const [city, setCity] = useState(shippingAddress.city || "");
-  const [postalCode, setPostalCode] = useState(
-    shippingAddress.postalCode || ""
+  const [mobilePhone, setMobilePhone] = useState(
+    shippingAddress.mobilePhone || ""
   );
-  const [country, setCountry] = useState(shippingAddress.country || "");
 
   const dispatch = useDispatch();
 
   const submitHandler = (e) => {
     e.preventDefault();
-    dispatch(saveShippingAddress({ address, city, postalCode, country }));
+    dispatch(saveShippingAddress({ address, mobilePhone }));
     history.push("/payment");
   };
 
@@ -29,7 +27,7 @@ const ShippingScreen = ({ history }) => {
       <form onSubmit={submitHandler}>
         <div className="mb-3">
           <label htmlFor="address" className="form-label">
-            Email address
+            地址
           </label>
           <input
             type="text"
@@ -41,42 +39,16 @@ const ShippingScreen = ({ history }) => {
           />
         </div>
         <div className="mb-3">
-          <label htmlFor="city" className="form-label">
-            City
+          <label htmlFor="mobilePhone" className="form-label">
+            手機
           </label>
           <input
             type="text"
             className="form-control"
-            id="city"
-            placeholder="Enter city"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-          />
-        </div>
-        <div className="mb-3">
-          <label htmlFor="postalCode" className="form-label">
-            PostalCode
-          </label>
-          <input
-            type="text"
-            className="form-control"
-            id="postalCode"
-            placeholder="Enter postalCode"
-            value={postalCode}
-            onChange={(e) => setPostalCode(e.target.value)}
-          />
-        </div>
-        <div className="mb-3">
-          <label htmlFor="country" className="form-label">
-            Country
-          </label>
-          <input
-            type="text"
-            className="form-control"
-            id="country"
-            placeholder="Enter country"
-            value={country}
-            onChange={(e) => setCountry(e.target.value)}
+            id="mobilePhone"
+            placeholder="手機號碼"
+            value={mobilePhone}
+            onChange={(e) => setMobilePhone(e.target.value)}
           />
         </div>
 

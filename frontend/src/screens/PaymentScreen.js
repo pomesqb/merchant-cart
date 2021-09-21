@@ -11,7 +11,7 @@ const PaymentScreen = ({ history }) => {
     history.push("/shipping");
   }
 
-  const [paymentMethod, setPaymentMethod] = useState("PayPal");
+  const [paymentMethod, setPaymentMethod] = useState("CreditCard");
 
   const dispatch = useDispatch();
 
@@ -32,12 +32,12 @@ const PaymentScreen = ({ history }) => {
             type="radio"
             name="flexRadioDefault"
             id="flexRadioDefault1"
-            value="PayPal"
+            value="CreditCard"
             onChange={(e) => setPaymentMethod(e.target.value)}
             checked
           />
           <label className="form-check-label" htmlFor="flexRadioDefault1">
-            PayPal or Credit Card
+            CreditCard
           </label>
         </div>
         <button type="submit" className="btn btn-primary">
